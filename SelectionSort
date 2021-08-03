@@ -1,0 +1,34 @@
+import { useState } from "react";
+import { swap } from "./sortingAlgorithm/index";
+
+function SelectionSort() {
+  const [arrayRandom, setArrayRandom] = useState([8, 5, 7, 6, 2]);
+  function SelectionSort(array) {
+    for (var i = 0; i < array.length; i++) {
+      let minIndex = i;
+
+      for (var j = i + 1; j < array.length; j++) {
+        console.log(j);
+        if (array[j] < array[minIndex]) {
+          minIndex = j;
+        }
+      }
+      swap(array, i, minIndex);
+    }
+    return array;
+  }
+
+  const clickHandler = () => {
+    var array = SelectionSort(arrayRandom);
+    console.log(array);
+    setArrayRandom([array]);
+  };
+
+  return (
+    <div>
+      <h1>{arrayRandom}</h1>
+      <button onClick={clickHandler}>SelectionSort</button>
+    </div>
+  );
+}
+export default SelectionSort;
