@@ -1,118 +1,138 @@
-import { createSlice } from "@reduxjs/toolkit";
-import BarStatus from "../function/barStatus";
-import { initialBarArray, NUMBER_OF_ARRAY_BARS } from "../function/initial";
-function randomIntFromInterval(min, max) {
-  // min and max included
-  return Math.floor(Math.random() * (max - min) + min);
-}
+import { useDispatch, useSelector } from "react-redux";
+import NavButton from "../NavButton/NavButton";
+import classes from "./NavBar.module.scss";
+import { bubbleSortActions } from "../../store/bubbleSortReducer";
+import { basicActions } from "../../store/basic";
+import SortingType from "../../function/sortingType";
+import Slider from "../Slider/Slider";
+import NavNumber from "../NavNumber/NavNumber";
+import { sleep, timeDelay } from "../../function/sleep";
+import { delayValue } from "../../function/initial";
+import { selectionSortActions } from "../../store/selectionSortReducer";
+import { mergeSortActions } from "../../store/mergeSortReducer";
 
-function randomArray(number) {
-  const array = [];
-  for (let i = 0; i < number; i++) {
-    array.push(randomIntFromInterval(1, 701));
+function NavBar() {
+  const dispatch = useDispatch();
+  const sortType = useSelector((state) => state.basic.sortType);
+
+  const bubble_number_of_array_bars = useSelector(
+    (state) => state.bubble.number_of_array_bars
+  );
+  const select_number_of_array_bars = useSelector(
+    (state) => state.select.number_of_array_bars
+  );
+  const merge_number_of_array_bars = useSelector(
+    (state) => state.merge.number_of_array_bars
+  );
+
+  const merge_barArray = useSelector((state) => state.merge.barArray);
+
+  const number_of_array_bars =
+    sortType === SortingType.BUBBLE_SORT
+      ? bubble_number_of_array_bars
+      : sortType === SortingType.BUBBLE_SORT
+      ? select_number_of_array_bars
+      : merge_number_of_array_bars;
+  const delay = delayValue(number_of_array_bars);
+  const bubbleTotalCounter = useSelector((state) => state.bubble.totalCounter);
+  const selectTotalCounter = useSelector((state) => state.select.totalCounter);
+
+  const bubbleSort_recursive = async (Counter) => {
+    if (Counter === 0) {
+      return;
+    }
+    dispatch(bubbleSortActions.bubble_Check());
+    await sleep(delay);
+    dispatch(bubbleSortActions.bubble_Swap());
+    await sleep(delay);
+    dispatch(bubbleSortActions.bubble_Finish());
+    await sleep(delay);
+    Counter--;
+    bubbleSort_recursive(Counter);
+  };
+
+  const selectionSort_recursive = async (Counter) => {
+    console.log(Counter);
+    if (Counter === 0) {
+      return;
+    }
+    dispatch(selectionSortActions.Selection_CheckAndUpdate());
+    await sleep(delay);
+    dispatch(selectionSortActions.Selection_Swap());
+    await sleep(delay);
+    dispatch(selectionSortActions.Selection_Finish());
+    await sleep(delay);
+
+    Counter--;
+    selectionSort_recursive(Counter);
+  };
+
+  async function mergeSortsplitArray(Counter) {
+    while (Counter < 10) {
+      dispatch(mergeSortActions.merge_Sort());
+      await sleep(1000);
+      Counter++;
+    }
   }
-  return array;
+
+  const generateArrayHandler = () => {
+    if (sortType === SortingType.BUBBLE_SORT) {
+      dispatch(
+        bubbleSortActions.resetArray({
+          number_of_array_bars: number_of_array_bars,
+        })
+      );
+    } else if (sortType === SortingType.SELECTION_SORT) {
+      dispatch(
+        selectionSortActions.resetArray({
+          number_of_array_bars: number_of_array_bars,
+        })
+      );
+    } else if (sortType === SortingType.MERGE_SORT) {
+      dispatch(
+        mergeSortActions.resetArray({
+          number_of_array_bars: number_of_array_bars,
+        })
+      );
+    }
+  };
+
+  const startSortingHandler = () => {
+    if (sortType === SortingType.BUBBLE_SORT) {
+      bubbleSort_recursive(bubbleTotalCounter);
+    } else if (sortType === SortingType.SELECTION_SORT) {
+      selectionSort_recursive(selectTotalCounter);
+    } else if (sortType === SortingType.MERGE_SORT) {
+      mergeSortsplitArray(0);
+    }
+  };
+  const bubbleSortHandler = () => {
+    dispatch(basicActions.resetSortType(SortingType.BUBBLE_SORT));
+  };
+  const selectionSort = () => {
+    dispatch(basicActions.resetSortType(SortingType.SELECTION_SORT));
+  };
+  const mergeSortHandler = () => {
+    dispatch(basicActions.resetSortType(SortingType.MERGE_SORT));
+  };
+
+  return (
+    <ul className={classes.navBar}>
+      <NavButton onClick={generateArrayHandler}>Generate New Array</NavButton>
+      <NavButton onClick={bubbleSortHandler} sortType={sortType}>
+        {SortingType.BUBBLE_SORT}
+      </NavButton>
+      <NavButton onClick={selectionSort} sortType={sortType}>
+        {SortingType.SELECTION_SORT}
+      </NavButton>
+      <NavButton onClick={mergeSortHandler} sortType={sortType}>
+        {SortingType.MERGE_SORT}
+      </NavButton>
+      <NavButton onClick={startSortingHandler}>Sort!</NavButton>
+      <Slider sortType={sortType}></Slider>
+      <NavNumber>{`Array Number: ${number_of_array_bars}`}</NavNumber>
+    </ul>
+  );
 }
 
-const initialMergeArray = (arrayNumber) => {
-  const newArray = randomArray(arrayNumber);
-  const barArray = [];
-  for (var i = 0; i < newArray.length; i++) {
-    barArray.push({
-      id: i,
-      number: newArray[i],
-      status: BarStatus.WAITING,
-      length: 1,
-    });
-  }
-  return barArray;
-};
-
-function changeOrder(oldIndex, newIndex, targetArray) {
-  const item = targetArray[oldIndex];
-  const a = targetArray.slice(0, oldIndex);
-  const b = targetArray.slice(oldIndex + 1, targetArray.length);
-  let newArray = [...a, ...b];
-  newArray.splice(newIndex, 0, item);
-  return newArray;
-}
-
-const initialMergeSortState = {
-  barArray: initialMergeArray(8),
-  number_of_array_bars: 8,
-};
-
-const mergeSortSlice = createSlice({
-  name: "mergeSortReducer",
-  initialState: initialMergeSortState,
-  reducers: {
-    resetArray(state, action) {
-      state.barArray = initialBarArray(action.payload.number_of_array_bars);
-      state.number_of_array_bars = action.payload.number_of_array_bars;
-    },
-    merge_Sort(state) {
-      console.log("a");
-      let leftStart = 0;
-      let rightStart = 1;
-
-      //找出左右相同陣列數目
-      while (
-        state.barArray[leftStart].length !== state.barArray[rightStart].length
-      ) {
-        leftStart = rightStart;
-        rightStart = leftStart + state.barArray[leftStart].length;
-      }
-
-      let arrayStart = leftStart;
-      const rLength = state.barArray[rightStart].length;
-      const lLength = state.barArray[leftStart].length;
-
-      let rCounter = 0;
-      let lCounter = 0;
-      while (rCounter < rLength && lCounter < lLength) {
-        if (
-          state.barArray[leftStart].number < state.barArray[rightStart].number
-        ) {
-          state.barArray = changeOrder(
-            arrayStart,
-            leftStart + lCounter,
-            state.barArray
-          );
-          lCounter++;
-        } else {
-          state.barArray = changeOrder(
-            arrayStart,
-            rightStart + rCounter,
-            state.barArray
-          );
-          rCounter++;
-        }
-        arrayStart++;
-      }
-
-      while (lCounter < lLength) {
-        state.barArray = changeOrder(
-          arrayStart,
-          leftStart + lCounter,
-          state.barArray
-        );
-        lCounter++;
-        arrayStart++;
-      }
-
-      while (rCounter < rLength) {
-        state.barArray = changeOrder(
-          arrayStart,
-          rightStart + rCounter,
-          state.barArray
-        );
-        rCounter++;
-        arrayStart++;
-      }
-    },
-  },
-});
-
-export const mergeSortActions = mergeSortSlice.actions;
-
-export default mergeSortSlice.reducer;
+export default NavBar;
