@@ -1,0 +1,118 @@
+import { createSlice } from "@reduxjs/toolkit";
+import BarStatus from "../function/barStatus";
+import { initialBarArray, NUMBER_OF_ARRAY_BARS } from "../function/initial";
+function randomIntFromInterval(min, max) {
+  // min and max included
+  return Math.floor(Math.random() * (max - min) + min);
+}
+
+function randomArray(number) {
+  const array = [];
+  for (let i = 0; i < number; i++) {
+    array.push(randomIntFromInterval(1, 701));
+  }
+  return array;
+}
+
+const initialMergeArray = (arrayNumber) => {
+  const newArray = randomArray(arrayNumber);
+  const barArray = [];
+  for (var i = 0; i < newArray.length; i++) {
+    barArray.push({
+      id: i,
+      number: newArray[i],
+      status: BarStatus.WAITING,
+      length: 1,
+    });
+  }
+  return barArray;
+};
+
+function changeOrder(oldIndex, newIndex, targetArray) {
+  const item = targetArray[oldIndex];
+  const a = targetArray.slice(0, oldIndex);
+  const b = targetArray.slice(oldIndex + 1, targetArray.length);
+  let newArray = [...a, ...b];
+  newArray.splice(newIndex, 0, item);
+  return newArray;
+}
+
+const initialMergeSortState = {
+  barArray: initialMergeArray(8),
+  number_of_array_bars: 8,
+};
+
+const mergeSortSlice = createSlice({
+  name: "mergeSortReducer",
+  initialState: initialMergeSortState,
+  reducers: {
+    resetArray(state, action) {
+      state.barArray = initialBarArray(action.payload.number_of_array_bars);
+      state.number_of_array_bars = action.payload.number_of_array_bars;
+    },
+    merge_Sort(state) {
+      console.log("a");
+      let leftStart = 0;
+      let rightStart = 1;
+
+      //找出左右相同陣列數目
+      while (
+        state.barArray[leftStart].length !== state.barArray[rightStart].length
+      ) {
+        leftStart = rightStart;
+        rightStart = leftStart + state.barArray[leftStart].length;
+      }
+
+      let arrayStart = leftStart;
+      const rLength = state.barArray[rightStart].length;
+      const lLength = state.barArray[leftStart].length;
+
+      let rCounter = 0;
+      let lCounter = 0;
+      while (rCounter < rLength && lCounter < lLength) {
+        if (
+          state.barArray[leftStart].number < state.barArray[rightStart].number
+        ) {
+          state.barArray = changeOrder(
+            arrayStart,
+            leftStart + lCounter,
+            state.barArray
+          );
+          lCounter++;
+        } else {
+          state.barArray = changeOrder(
+            arrayStart,
+            rightStart + rCounter,
+            state.barArray
+          );
+          rCounter++;
+        }
+        arrayStart++;
+      }
+
+      while (lCounter < lLength) {
+        state.barArray = changeOrder(
+          arrayStart,
+          leftStart + lCounter,
+          state.barArray
+        );
+        lCounter++;
+        arrayStart++;
+      }
+
+      while (rCounter < rLength) {
+        state.barArray = changeOrder(
+          arrayStart,
+          rightStart + rCounter,
+          state.barArray
+        );
+        rCounter++;
+        arrayStart++;
+      }
+    },
+  },
+});
+
+export const mergeSortActions = mergeSortSlice.actions;
+
+export default mergeSortSlice.reducer;
