@@ -1,55 +1,36 @@
-import { useState } from "react";
-import { initialArray } from "./sortingAlgorithm/index";
-
-function MergeSort() {
-  const [arrayRandom, setArrayRandom] = useState(initialArray);
-
-  function splitArray(array) {
-    const arrayLength = array.length;
-    if (arrayLength < 2) return array;
+async function mergeSort_recursive(startPoint, arrayLength) {
+    if (arrayLength === 1) {
+      return { startPoint: startPoint, length: arrayLength };
+    }
 
     const mid = Math.ceil(arrayLength / 2);
-    console.log(arrayLength);
-    console.log(mid);
-    const arrayLeft = array.slice(0, mid);
-    const arrayRight = array.slice(mid, arrayLength);
-    const array_l = splitArray(arrayLeft);
-    const array_r = splitArray(arrayRight);
+
+    const arrayLeft_startPoint = startPoint;
+    const arrayRight_startPoint = startPoint + mid;
+    const arrayLeft_length = mid;
+    const arrayRight_length = arrayLength - mid;
+    const array_l = await mergeSort_recursive(
+      arrayLeft_startPoint,
+      arrayLeft_length
+    );
+    const array_r = await mergeSort_recursive(
+      arrayRight_startPoint,
+      arrayRight_length
+    );
+
     return mergeArray(array_l, array_r);
   }
 
-  function mergeArray(arrayLeft, arrayRight) {
-    const newArray = [];
-
-    while (arrayLeft.length && arrayRight.length) {
-      if (arrayLeft[0] < arrayRight[0]) {
-        newArray.push(arrayLeft.shift());
-      } else {
-        newArray.push(arrayRight.shift());
-      }
-    }
-
-    while (arrayLeft.length) {
-      newArray.push(arrayLeft.shift());
-    }
-
-    while (arrayRight.length) {
-      newArray.push(arrayLeft.shift());
-    }
-
-    return newArray;
+  async function mergeArray(arrayLeft, arrayRight) {
+    await sleep(delay);
+    dispatch(
+      mergeSortActions.merge_sort({
+        arrayLeft: arrayLeft,
+        arrayRight: arrayRight,
+      })
+    );
+    return {
+      startPoint: arrayLeft.startPoint,
+      length: arrayLeft.length + arrayRight.length,
+    };
   }
-
-  const clickHandler = () => {
-    var array = splitArray(arrayRandom);
-    setArrayRandom(array);
-  };
-  return (
-    <div>
-      <h1>{arrayRandom}</h1>
-      <button onClick={clickHandler}>MergeSort</button>
-    </div>
-  );
-}
-
-export default MergeSort;
