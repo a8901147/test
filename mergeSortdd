@@ -1,138 +1,55 @@
-import { useDispatch, useSelector } from "react-redux";
-import NavButton from "../NavButton/NavButton";
-import classes from "./NavBar.module.scss";
-import { bubbleSortActions } from "../../store/bubbleSortReducer";
-import { basicActions } from "../../store/basic";
-import SortingType from "../../function/sortingType";
-import Slider from "../Slider/Slider";
-import NavNumber from "../NavNumber/NavNumber";
-import { sleep, timeDelay } from "../../function/sleep";
-import { delayValue } from "../../function/initial";
-import { selectionSortActions } from "../../store/selectionSortReducer";
-import { mergeSortActions } from "../../store/mergeSortReducer";
+merge_sort(state, action) {
+      let arrayLeft_startPoint = action.payload.arrayLeft.startPoint;
+      let arrayRight_startPoint = action.payload.arrayRight.startPoint;
+      let arrayLeft_length = action.payload.arrayLeft.length;
+      let arrayRight_length = action.payload.arrayRight.length;
+      let currentIndex = arrayLeft_startPoint;
+      console.log(currentIndex);
 
-function NavBar() {
-  const dispatch = useDispatch();
-  const sortType = useSelector((state) => state.basic.sortType);
+      while (arrayLeft_length > 0 && arrayRight_length > 0) {
+        // 哪邊值比較小就加入進 result
+        if (
+          state.barArray[arrayLeft_startPoint].number <
+          state.barArray[arrayRight_startPoint].number
+        ) {
+          let item1 = state.barArray[arrayLeft_startPoint];
+          console.log("a");
+          state.barArray.splice(arrayLeft_startPoint, 1);
+          state.barArray.splice(currentIndex, 0, item1);
+          arrayLeft_startPoint++;
+          arrayLeft_length--;
+        } else {
+          let item2 = state.barArray[arrayRight_startPoint];
+          console.log("b");
+          state.barArray.splice(arrayRight_startPoint, 1);
+          state.barArray.splice(currentIndex, 0, item2);
+          arrayRight_startPoint++;
+          arrayLeft_startPoint++;
+          arrayRight_length--;
+        }
+        currentIndex++;
+      }
 
-  const bubble_number_of_array_bars = useSelector(
-    (state) => state.bubble.number_of_array_bars
-  );
-  const select_number_of_array_bars = useSelector(
-    (state) => state.select.number_of_array_bars
-  );
-  const merge_number_of_array_bars = useSelector(
-    (state) => state.merge.number_of_array_bars
-  );
+      // 只剩左邊陣列就直接加入 result
+      while (arrayLeft_length > 0) {
+        let item3 = state.barArray[arrayLeft_startPoint];
+        console.log("c");
+        state.barArray.splice(arrayLeft_startPoint, 1);
+        state.barArray.splice(currentIndex, 0, item3);
+        arrayLeft_startPoint++;
+        arrayLeft_length--;
+        currentIndex++;
+      }
 
-  const merge_barArray = useSelector((state) => state.merge.barArray);
-
-  const number_of_array_bars =
-    sortType === SortingType.BUBBLE_SORT
-      ? bubble_number_of_array_bars
-      : sortType === SortingType.BUBBLE_SORT
-      ? select_number_of_array_bars
-      : merge_number_of_array_bars;
-  const delay = delayValue(number_of_array_bars);
-  const bubbleTotalCounter = useSelector((state) => state.bubble.totalCounter);
-  const selectTotalCounter = useSelector((state) => state.select.totalCounter);
-
-  const bubbleSort_recursive = async (Counter) => {
-    if (Counter === 0) {
-      return;
-    }
-    dispatch(bubbleSortActions.bubble_Check());
-    await sleep(delay);
-    dispatch(bubbleSortActions.bubble_Swap());
-    await sleep(delay);
-    dispatch(bubbleSortActions.bubble_Finish());
-    await sleep(delay);
-    Counter--;
-    bubbleSort_recursive(Counter);
-  };
-
-  const selectionSort_recursive = async (Counter) => {
-    console.log(Counter);
-    if (Counter === 0) {
-      return;
-    }
-    dispatch(selectionSortActions.Selection_CheckAndUpdate());
-    await sleep(delay);
-    dispatch(selectionSortActions.Selection_Swap());
-    await sleep(delay);
-    dispatch(selectionSortActions.Selection_Finish());
-    await sleep(delay);
-
-    Counter--;
-    selectionSort_recursive(Counter);
-  };
-
-  async function mergeSortsplitArray(Counter) {
-    while (Counter < 10) {
-      dispatch(mergeSortActions.merge_Sort());
-      await sleep(1000);
-      Counter++;
-    }
-  }
-
-  const generateArrayHandler = () => {
-    if (sortType === SortingType.BUBBLE_SORT) {
-      dispatch(
-        bubbleSortActions.resetArray({
-          number_of_array_bars: number_of_array_bars,
-        })
-      );
-    } else if (sortType === SortingType.SELECTION_SORT) {
-      dispatch(
-        selectionSortActions.resetArray({
-          number_of_array_bars: number_of_array_bars,
-        })
-      );
-    } else if (sortType === SortingType.MERGE_SORT) {
-      dispatch(
-        mergeSortActions.resetArray({
-          number_of_array_bars: number_of_array_bars,
-        })
-      );
-    }
-  };
-
-  const startSortingHandler = () => {
-    if (sortType === SortingType.BUBBLE_SORT) {
-      bubbleSort_recursive(bubbleTotalCounter);
-    } else if (sortType === SortingType.SELECTION_SORT) {
-      selectionSort_recursive(selectTotalCounter);
-    } else if (sortType === SortingType.MERGE_SORT) {
-      mergeSortsplitArray(0);
-    }
-  };
-  const bubbleSortHandler = () => {
-    dispatch(basicActions.resetSortType(SortingType.BUBBLE_SORT));
-  };
-  const selectionSort = () => {
-    dispatch(basicActions.resetSortType(SortingType.SELECTION_SORT));
-  };
-  const mergeSortHandler = () => {
-    dispatch(basicActions.resetSortType(SortingType.MERGE_SORT));
-  };
-
-  return (
-    <ul className={classes.navBar}>
-      <NavButton onClick={generateArrayHandler}>Generate New Array</NavButton>
-      <NavButton onClick={bubbleSortHandler} sortType={sortType}>
-        {SortingType.BUBBLE_SORT}
-      </NavButton>
-      <NavButton onClick={selectionSort} sortType={sortType}>
-        {SortingType.SELECTION_SORT}
-      </NavButton>
-      <NavButton onClick={mergeSortHandler} sortType={sortType}>
-        {SortingType.MERGE_SORT}
-      </NavButton>
-      <NavButton onClick={startSortingHandler}>Sort!</NavButton>
-      <Slider sortType={sortType}></Slider>
-      <NavNumber>{`Array Number: ${number_of_array_bars}`}</NavNumber>
-    </ul>
-  );
-}
-
-export default NavBar;
+      // 只剩右邊陣列就直接加入 result
+      while (arrayRight_length > 0) {
+        let item4 = state.barArray[arrayRight_startPoint];
+        console.log("d");
+        state.barArray.splice(arrayRight_startPoint, 1);
+        state.barArray.splice(currentIndex, 0, item4);
+        arrayRight_startPoint++;
+        arrayLeft_startPoint++;
+        arrayRight_length--;
+        currentIndex++;
+      }
+    },
